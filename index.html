@@ -63,7 +63,7 @@
     <div id="mercy-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-6">
         <div class="bg-white p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl scale-up">
             <h3 class="text-xl font-bold mb-4 text-red-900">慈悲示現</h3>
-            <p class="text-stone-600 mb-8 leading-relaxed text-sm">修行路遠，若因緣未至，是否願接受指引直接顯示答案？</p>
+            <p class="text-stone-600 mb-8 leading-relaxed text-sm">修行路遠，若法緣未至，是否願接受指引直接觀照答案？</p>
             <div class="flex gap-4">
                 <button onclick="closeMercyModal()" class="flex-1 py-3 border border-stone-300 rounded-xl text-stone-500 hover:bg-stone-50 transition-colors">再思索片刻</button>
                 <button onclick="revealAnswer()" class="flex-1 py-3 bg-red-800 text-white rounded-xl font-bold hover:bg-red-900 transition-shadow shadow-lg">接受指引</button>
@@ -93,7 +93,7 @@
             { img: '005.png', hint: '這件帶有吉祥寓意的作品名稱為何？', answers: ['太陽的賜福'], placeholder: '五個字' },
             { img: '006.png', hint: '請觀察此展品的解說牌名稱？', answers: ['守護'], placeholder: '兩個字' },
             { img: '007.png', hint: '這件充滿力量感的黑色陶藝作品名稱為何？', answers: ['黑金剛','黑金剛大哥大'], placeholder: '輸入正確答案' },
-            { img: '008.png', hint: '這件巨輪大概有多重？', answers: ['200', '200公斤', '兩百公斤', '約200公斤', '約兩百公斤', '200kg', '約200kg', '200Kg', '約200Kg'], placeholder: '重量' }
+            { img: '008.png', hint: '這件巨輪大概有多重？', answers: ['200', '200公斤', '兩百公斤', '約200公斤', '約兩百公斤', '200kg', '約200kg', '200Kg', '約200Kg'], placeholder: '一個字' }
         ];
 
         // 達悟族與阿美族題目設定
@@ -126,7 +126,7 @@
                     html = `
                         <div class="zen-card p-8 rounded-3xl shadow-2xl animate-fadeIn text-center">
                             <span class="text-xs tracking-[0.4em] text-amber-700 font-bold uppercase">第四關</span>
-                            <h1 class="text-3xl font-bold mt-2 tracking-tight text-stone-800">【修】— 手繪自性</h1>
+                            <h1 class="text-3xl font-bold mt-2 tracking-tight text-stone-800">【壞】— 手繪自性</h1>
                             <div class="w-12 h-1 bg-amber-600 mx-auto mt-4 mb-8 rounded-full"></div>
                             <div class="space-y-6 text-lg leading-relaxed text-stone-600 italic mb-10 serif">
                                 <p>《華嚴經》云：『心如工畫師，能畫諸世間。』</p>
@@ -160,7 +160,7 @@
                     html = `
                         <div class="zen-card p-8 rounded-3xl shadow-2xl animate-fadeIn text-center">
                             <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600 text-4xl">✓</div>
-                            <h2 class="text-3xl font-bold mb-2">路線指引</h2>
+                            <h2 class="text-3xl font-bold mb-2">圓滿指引</h2>
                             <p class="text-amber-800 font-bold tracking-widest mb-8 text-lg">【目的地：新旺集瓷】</p>
                             <div class="bg-stone-50 p-6 rounded-3xl border border-stone-100 space-y-4 shadow-inner mb-8">
                                 <span class="text-xs text-stone-400 uppercase tracking-widest">下午集合時間</span>
@@ -312,15 +312,15 @@
                     html = `
                         <div class="zen-card p-10 rounded-3xl shadow-2xl animate-fadeIn text-center bg-stone-900 text-white border-none">
                             <div class="w-20 h-20 text-amber-400 mx-auto mb-6 text-5xl">✧</div>
-                            <h1 class="text-3xl font-bold mb-4 italic serif">圓滿達成</h1>
+                            <h1 class="text-3xl font-bold mb-4 italic serif">修行圓滿</h1>
                             <p class="text-stone-400 mb-8 leading-relaxed">
-                                恭喜挑戰者們！你已通過六重奧秘試煉。<br/>
+                                恭喜修行者！你已通過六重奧秘試煉。<br/>
                                 從泥土到烈火，從老街到博物館。<br/>
                                 願你在生活中亦能如瓷，堅韌而溫潤。
                             </p>
                             <div class="border-2 border-amber-900/30 p-8 rounded-3xl bg-stone-800/50 mb-8">
-                                <p class="text-amber-500 font-bold tracking-widest text-xl">【四校聯合社遊鶯歌行】</p>
-                                <p class="text-stone-500 text-xs mt-4 italic">2026年5月 尋寶證明</p>
+                                <p class="text-amber-500 font-bold tracking-widest text-xl">【功功德圓滿・四校聯合社遊鶯歌行】</p>
+                                <p class="text-stone-500 text-xs mt-4 italic">2026年5月 修持證明</p>
                             </div>
                             <button onclick="location.reload()" class="text-stone-500 hover:text-amber-400 text-sm flex items-center justify-center gap-2 mx-auto transition-colors">
                                 ↺ 重新啟程
@@ -392,7 +392,7 @@
 
         function getHintContent() {
             if (state.hintLevel === 0) return '<p class="italic text-stone-400 text-[10px] text-center py-2">尚無啟示，若解碼受阻可點擊尋求指引...</p>';
-            let hints = ['雙入(區碼) = 02', '八正(8) 六波(6)', '七覺支(7) 7出現兩次', '聖賢二十七(27) 27出現兩次'];
+            let hints = ['雙入(區碼) = 02', '八正(8) 六波(6)', '七覺支(7) 出現兩次', '聖賢二十七(27) 出現兩次'];
             let txt = '<ul class="space-y-1">';
             for(let i=0; i<state.hintLevel; i++) {
                 txt += `<li class="text-amber-900 border-b border-amber-100 pb-1">● ${hints[i]}</li>`;
