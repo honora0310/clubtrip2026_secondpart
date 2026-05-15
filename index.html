@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>佛法解謎：緣起之途</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --zen-beige: #F9F7F2;
+            --zen-brown: #8B735B;
+            --zen-green: #8A9A5B;
+            --zen-dark: #2C3E50;
+            --zen-tan: #D2B48C;
+        }
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--zen-beige);
+            color: var(--zen-dark);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .serif { font-family: 'Noto Serif TC', serif; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn { animation: fadeIn 0.7s ease-out forwards; }
+        
+        .zen-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .dial-btn:active {
+            transform: scale(0.95);
+            background-color: var(--zen-beige);
+        }
+
+        .scale-up {
+            animation: scaleUp 0.3s ease-out;
+        }
+        @keyframes scaleUp {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div id="app" class="max-w-lg w-full">
+        <!-- 內容由 JavaScript 動態渲染 -->
+    </div>
+
+    <!-- 慈悲示現確認彈窗 -->
+    <div id="mercy-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-6">
+        <div class="bg-white p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl scale-up">
+            <h3 class="text-xl font-bold mb-4 text-red-900">慈悲示現</h3>
+            <p class="text-stone-600 mb-8 leading-relaxed text-sm">修行路遠，若法緣未至，是否願接受指引直接觀照答案？</p>
+            <div class="flex gap-4">
+                <button onclick="closeMercyModal()" class="flex-1 py-3 border border-stone-300 rounded-xl text-stone-500 hover:bg-stone-50 transition-colors">再思索片刻</button>
+                <button onclick="revealAnswer()" class="flex-1 py-3 bg-red-800 text-white rounded-xl font-bold hover:bg-red-900 transition-shadow shadow-lg">接受指引</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲狀態管理
+        let state = {
+            stage: 'L4_INTRO', 
+            hintLevel: 0,
+            error: '',
+            errorCount: 0,
+            dialValue: '',
+            museumStep: 0,
+            chosenTribe: '', // 紀錄隨機抽中的族群 ('TAO' 或 'AMI')
+            tribeAnswers: {} // 紀錄使用者在族群關卡選擇的答案
+        };
+
+        // 博物館題目設定
+        const museumMissions = [
+            { img: '001.jpg', hint: '請觀察展品說明，這是何種「釉」？', answers: ['金屬釉'], placeholder: '三個字' },
+            { img: '002.jpg', hint: '這件作品名稱為何？', answers: ['包子窯', '饅頭窯'], placeholder: '三個字' },
+            { img: '003.png', hint: '這件擬人化的趣味作品名稱為何？', answers: ['浣熊酒瓶'], placeholder: '四個字' },
+            { img: '004.png', hint: '請觀察此件作品的名稱為何？', answers: ['青花鬥彩薄胎蓮口碗'], placeholder: '九個字' },
+            { img: '005.png', hint: '這件帶有吉祥寓意的作品名稱為何？', answers: ['太陽的賜福'], placeholder: '五個字' },
+            { img: '006.png', hint: '請觀察此展品的解說牌名稱？', answers: ['守護'], placeholder: '兩個字' },
+            { img: '007.png', hint: '這件充滿力量感的黑色陶藝作品名稱為何？', answers: ['黑金剛','黑金剛大哥大'], placeholder: '輸入正確答案' },
+            { img: '008.png', hint: '這件巨輪大概有多重？', answers: ['200', '200公斤', '兩百公斤', '約200公斤', '約兩百公斤', '200kg', '約200kg', '200Kg', '約200Kg'], placeholder: '一個字' }
+        ];
+
+        // 達悟族與阿美族題目設定
+        const tribeMissions = {
+            'TAO': {
+                title: '達悟族 陶藝探索',
+                questions: [
+                    { id: 'q1', text: '(1) 陶偶的目的是為了什麼？', options: ['1. 祭祀', '2. 收藏', '3. 娛樂'], correct: '3' },
+                    { id: 'q2', text: '(2) 什麼樣式現存最多？', options: ['1. 同心圓紋', '2. 素面無紋', '3. 人形紋', '4. 波面紋'], correct: '2' },
+                    { id: 'q4', text: '(4) 陶偶的創作者多為？', options: ['1. 老人、小孩', '2. 青壯年'], correct: '1' }
+                ]
+            },
+            'AMI': {
+                title: '阿美族 陶藝探索',
+                questions: [
+                    { id: 'q1', text: '(1) 阿美族 - 採土地點在哪裡？', options: ['1. 聚落周邊', '2. 聚落內特定區域'], correct: '1' },
+                    { id: 'q2', text: '(2) 阿美族 - 燒陶時，底下會墊什麼？（看清楚選項唷！）', options: ['1. GWAGING', '2. GWAGIN'], correct: '2' },
+                    { id: 'q3', text: '(3) 阿美族 - DEVAS是什麼？', options: ['1. 玩具', '2. 生活用品', '3. 祭器'], correct: '3' },
+                    { id: 'q4', text: '(4) 阿美族 - 製作陶土的手法是什麼？', options: ['1. 直接捏塑成形', '2. 使用拉坏機'], correct: '1' }
+                ]
+            }
+        };
+
+        function render() {
+            const app = document.getElementById('app');
+            let html = '';
+            
+            switch (state.stage) {
+                case 'L4_INTRO':
+                    html = `
+                        <div class="zen-card p-8 rounded-3xl shadow-2xl animate-fadeIn text-center">
+                            <span class="text-xs tracking-[0.4em] text-amber-700 font-bold uppercase">第四關</span>
+                            <h1 class="text-3xl font-bold mt-2 tracking-tight text-stone-800">【修】— 手繪自性</h1>
+                            <div class="w-12 h-1 bg-amber-600 mx-auto mt-4 mb-8 rounded-full"></div>
+                            <div class="space-y-6 text-lg leading-relaxed text-stone-600 italic mb-10 serif">
+                                <p>《華嚴經》云：『心如工畫師，能畫諸世間。』</p>
+                                <p>修行就像是在白瓷上著色，<br>你的一念清淨，杯上便生蓮花。</p>
+                            </div>
+                            <button onclick="updateStage('L4_RIDDLE')" class="w-full py-4 bg-stone-800 text-white rounded-2xl hover:bg-stone-700 transition-all shadow-lg flex items-center justify-center gap-3 tracking-[0.2em]">
+                                尋找磨鍊之地 <span>→</span>
+                            </button>
+                        </div>
+                    `;
+                    break;
+
+                case 'L4_RIDDLE':
+                    html = `
+                        <div class="zen-card p-8 rounded-3xl shadow-2xl animate-fadeIn">
+                            <h2 class="text-xl font-bold mb-6 text-amber-800 flex items-center gap-2">📍 地標解謎</h2>
+                            <div class="bg-stone-50 p-6 rounded-2xl mb-8 space-y-3 border-l-4 border-amber-600 font-medium italic text-stone-700 serif">
+                                <p>傳承四代火不熄，</p>
+                                <p>集得萬瓷聚此地。</p>
+                                <p>門口黑瓦映斜陽，</p>
+                                <p>新芽旺發老街裡。</p>
+                            </div>
+                            <input type="text" id="l4-input" placeholder="請輸入地標名稱" class="w-full p-4 border-2 border-stone-200 rounded-2xl focus:border-amber-600 outline-none text-center text-xl mb-2 transition-colors">
+                            <p id="error-msg" class="text-red-500 text-sm text-center mb-4 min-h-[1.25rem]">${state.error}</p>
+                            <button onclick="checkL4()" class="w-full py-4 bg-amber-800 text-white rounded-2xl font-bold tracking-widest shadow-md hover:bg-amber-900 transition-colors">確認方位</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'L4_COMPLETE':
+                    html = `
+                        <div class="zen-card p-8 rounded-3xl shadow-2xl animate-fadeIn text-center">
+                            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600 text-4xl">✓</div>
+                            <h2 class="text-3xl font-bold mb-2">圓滿指引</h2>
+                            <p class="text-amber-800 font-bold tracking-widest mb-8 text-lg">【目的地：新旺集瓷】</p>
+                            <div class="bg-stone-50 p-6 rounded-3xl border border-stone-100 space-y-4 shadow-inner mb-8">
+                                <span class="text-xs text-stone-400 uppercase tracking-widest">下午集合時間</span>
+                                <p class="text-5xl font-mono font-black text-stone-800">13:00</p>
+                                <p class="text-stone-500 mt-1">請於下午一點整準時集合</p>
+                            </div>
+                            <button onclick="updateStage('L5_INTRO')" class="w-full py-4 bg-stone-800 text-white rounded-2xl font-bold tracking-widest hover:bg-stone-700 shadow-lg">開啟最終試煉</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'L5_INTRO':
+                    html = `
+                        <div class="zen-card p-8 rounded-3xl shadow-2xl animate-fadeIn text-center">
+                            <span class="text-xs tracking-[0.4em] text-red-700 font-bold uppercase">第五關</span>
+                            <h1 class="text-3xl font-bold mt-2 tracking-tight">【空】— 火煉真金</h1>
+                            <div class="w-12 h-1 bg-red-600 mx-auto mt-4 mb-8 rounded-full"></div>
+                            <p class="text-stone-600 italic leading-relaxed mb-10 serif">「泥胚入窯，經千度烈火而不碎，方能轉土成瓷。受得住考驗，方能顯出真性。」</p>
+                            <button onclick="updateStage('L5_DECODE')" class="w-full py-4 bg-stone-900 text-white rounded-2xl font-bold tracking-widest hover:shadow-xl transition-all">尋找解碼啟示</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'L5_DECODE':
+                    html = `
+                        <div class="zen-card p-8 rounded-3xl shadow-2xl animate-fadeIn">
+                            <h2 class="text-xl font-bold mb-4 text-center text-stone-800">🧩 數字碎片解碼</h2>
+                            
+                            <div class="bg-amber-50/80 p-4 rounded-2xl border border-amber-100 mb-6 shadow-sm serif text-center">
+                                <p>空門雙入見真如</p>
+                                <p>八正六波度迷途</p>
+                                <p>七覺支中靈光現</p>
+                                <p>聖賢二十七歸處</p>
+                                <div class="text-amber-800 font-bold text-[10px] mt-4 mb-2 flex justify-between items-center font-sans text-left">
+                                    <span>🔍 智慧啟示 (階段 ${state.hintLevel}/4)</span>
+                                    ${state.hintLevel < 4 ? `<button onclick="nextHint()" class="bg-amber-200 hover:bg-amber-300 px-3 py-1 rounded-full text-[10px] transition-colors">求指引</button>` : ''}
+                                </div>
+                                <div class="text-stone-600 text-xs leading-relaxed min-h-[40px] font-sans text-left">
+                                    ${getHintContent()}
+                                </div>
+                            </div>
+
+                            <div class="bg-stone-100 p-4 rounded-2xl mb-6 text-center border shadow-inner">
+                                <div class="text-3xl font-mono tracking-widest h-10 text-stone-800 flex items-center justify-center">
+                                    ${formatPhone(state.dialValue)}
+                                </div>
+                                <p id="error-msg" class="text-red-500 text-xs mt-2 h-4">${state.error}</p>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3 max-w-[240px] mx-auto mb-8">
+                                ${[1, 2, 3, 4, 5, 6, 7, 8, 9, '*', 0, '#'].map(key => `
+                                    <button onclick="pressKey('${key}')" class="dial-btn w-14 h-14 rounded-full bg-white border border-stone-200 shadow-sm flex flex-col items-center justify-center hover:border-amber-400 transition-all">
+                                        <span class="text-lg font-bold text-stone-700">${key}</span>
+                                        <span class="text-[7px] text-stone-400 uppercase">${getKeySub(key)}</span>
+                                    </button>
+                                `).join('')}
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button onclick="clearDial()" class="flex-1 py-4 bg-stone-200 text-stone-600 rounded-2xl font-bold hover:bg-stone-300 transition-colors">重撥</button>
+                                <button onclick="checkL5()" class="flex-[2] py-4 bg-red-900 text-white rounded-2xl font-bold tracking-widest shadow-lg hover:bg-red-800 transition-colors">撥通真相</button>
+                            </div>
+
+                            ${state.hintLevel >= 2 ? `<button onclick="openMercyModal()" class="w-full mt-4 text-xs text-stone-400 underline italic text-center block">解碼困難？請求慈悲示現</button>` : ''}
+                        </div>
+                    `;
+                    break;
+
+                case 'L5_LOCATION':
+                    html = `
+                        <div class="zen-card p-8 rounded-3xl shadow-2xl animate-fadeIn">
+                            <h2 class="text-xl font-bold mb-6 text-stone-800 flex items-center gap-2">【緣】— 眾緣和合</h2>
+                            <div class="bg-stone-50 p-6 rounded-2xl mb-8 space-y-4 border-l-4 border-stone-800 font-medium italic text-stone-700 serif">
+                                <p>萬法由緣起，</p>
+                                <p>清清水模映光影。</p>
+                                <p>洗練建築藏古意，</p>
+                                <p>陶冶自性在此地。</p>
+                            </div>
+                            <input type="text" id="location-input" placeholder="接下來要前往的地點是？" class="w-full p-4 border-2 border-stone-200 rounded-2xl focus:border-stone-800 outline-none text-center text-lg mb-2 transition-colors">
+                            <p id="error-msg" class="text-red-500 text-sm text-center mb-4 min-h-[1.25rem]">${state.error}</p>
+                            <button onclick="checkLocation()" class="w-full py-4 bg-stone-900 text-white rounded-2xl font-bold tracking-widest shadow-md hover:bg-black transition-colors">尋緣而去</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'MUSEUM_MISSION':
+                    const currentMission = museumMissions[state.museumStep];
+                    html = `
+                        <div class="zen-card p-8 rounded-3xl shadow-2xl animate-fadeIn">
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="text-xs font-bold text-amber-800 uppercase">陶博館一樓 試煉 (${state.museumStep + 1}/8)</span>
+                                <div class="flex gap-1">
+                                    ${museumMissions.map((_, i) => `<div class="w-2 h-2 rounded-full ${i <= state.museumStep ? 'bg-amber-600' : 'bg-stone-200'}"></div>`).join('')}
+                                </div>
+                            </div>
+                            <h2 class="text-lg font-bold mb-4 text-center">前往展區：<br/><span class="text-amber-800">「化泥成形」展區</span></h2>
+                            <div class="rounded-xl mb-6 overflow-hidden border-2 border-stone-100 shadow-sm bg-stone-50 min-h-[180px] flex items-center justify-center">
+                                <img src="${currentMission.img}" alt="展品照片" class="max-w-full h-auto" onerror="handleImageError(this)">
+                            </div>
+                            <p class="text-sm text-stone-500 mb-4 text-center leading-relaxed italic px-2">${currentMission.hint}</p>
+                            <input type="text" id="museum-input" placeholder="${currentMission.placeholder}" class="w-full p-4 border-2 border-stone-200 rounded-2xl text-center font-bold text-xl outline-none focus:border-amber-600 mb-2 transition-all">
+                            <p id="error-msg" class="text-red-500 text-sm text-center mb-4 min-h-[1.25rem]">${state.error}</p>
+                            <button onclick="checkMuseum()" class="w-full py-4 bg-stone-800 text-white rounded-2xl font-bold tracking-widest hover:bg-stone-900 shadow-md">提交驗證</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'TAO_AMI_MISSION':
+                    const tribeData = tribeMissions[state.chosenTribe];
+                    html = `
+                        <div class="zen-card p-8 rounded-3xl shadow-2xl animate-fadeIn">
+                            <span class="text-xs tracking-[0.4em] text-amber-800 font-bold uppercase block text-center mb-2">二樓常設展間通道</span>
+                            <h2 class="text-2xl font-bold text-center text-stone-800 mb-2">🎬 原住民族陶藝影片特展</h2>
+                            <p class="text-xs text-stone-500 text-center mb-6 italic">請觀看展間影片，回答下列問題完成尋寶</p>
+                            <div class="w-full h-1 bg-amber-600/30 rounded-full mb-6"></div>
+                            <h3 class="text-lg font-bold text-amber-900 mb-4 flex items-center gap-2">📍 ${tribeData.title}</h3>
+                            
+                            <div class="space-y-6">
+                                ${tribeData.questions.map((q) => `
+                                    <div class="bg-stone-50/60 p-4 rounded-2xl border border-stone-200/60">
+                                        <p class="font-bold text-stone-800 mb-3 text-sm">${q.text}</p>
+                                        <div class="grid grid-cols-1 gap-2">
+                                            ${q.options.map((opt, idx) => {
+                                                const optVal = (idx + 1).toString();
+                                                const isSelected = state.tribeAnswers[q.id] === optVal;
+                                                return `
+                                                    <button onclick="selectTribeAnswer('${q.id}', '${optVal}')" 
+                                                        class="w-full p-3 rounded-xl text-left text-sm font-medium transition-all border ${
+                                                            isSelected 
+                                                            ? 'bg-amber-800 text-white border-amber-800 shadow-md' 
+                                                            : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
+                                                        }">
+                                                        ${opt}
+                                                    </button>
+                                                `;
+                                            }).join('')}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <p id="error-msg" class="text-red-500 text-sm text-center mt-4 min-h-[1.25rem]">${state.error}</p>
+                            <button onclick="checkTribeMission()" class="w-full mt-4 py-4 bg-stone-900 text-white rounded-2xl font-bold tracking-widest hover:bg-black transition-colors shadow-md">通關完成尋寶闖關</button>
+                        </div>
+                    `;
+                    break;
+
+                case 'FINAL':
+                    html = `
+                        <div class="zen-card p-10 rounded-3xl shadow-2xl animate-fadeIn text-center bg-stone-900 text-white border-none">
+                            <div class="w-20 h-20 text-amber-400 mx-auto mb-6 text-5xl">✧</div>
+                            <h1 class="text-3xl font-bold mb-4 italic serif">修行圓滿</h1>
+                            <p class="text-stone-400 mb-8 leading-relaxed">
+                                恭喜修行者！你已通過六重奧秘試煉。<br/>
+                                從泥土到烈火，從老街到博物館。<br/>
+                                願你在生活中亦能如瓷，堅韌而溫潤。
+                            </p>
+                            <div class="border-2 border-amber-900/30 p-8 rounded-3xl bg-stone-800/50 mb-8">
+                                <p class="text-amber-500 font-bold tracking-widest text-xl">【功功德圓滿・四校聯合社遊鶯歌行】</p>
+                                <p class="text-stone-500 text-xs mt-4 italic">2026年5月 修持證明</p>
+                            </div>
+                            <button onclick="location.reload()" class="text-stone-500 hover:text-amber-400 text-sm flex items-center justify-center gap-2 mx-auto transition-colors">
+                                ↺ 重新啟程
+                            </button>
+                        </div>
+                    `;
+                    break;
+            }
+
+            app.innerHTML = html;
+        }
+
+        // 圖片錯誤處理
+        function handleImageError(img) {
+            console.error("無法載入圖片:", img.src);
+            img.src = 'https://via.placeholder.com/400x300?text=圖片路徑錯誤或不存在';
+            img.onerror = null; 
+        }
+
+        // 核心跳轉與狀態更新
+        function updateStage(newStage) {
+            state.stage = newStage;
+            state.error = '';
+            state.errorCount = 0;
+            state.dialValue = '';
+            render();
+        }
+
+        function checkL4() {
+            const val = document.getElementById('l4-input').value.trim();
+            if (val.includes('新旺集瓷')) {
+                updateStage('L4_COMPLETE');
+                return;
+            } 
+            state.errorCount++;
+            if (state.errorCount === 1) state.error = '觀察周遭：此地門口有著標誌性的「黑瓦斜頂」。';
+            else if (state.errorCount === 2) state.error = '拆解字謎：詩中「新芽旺發」暗示了名字前兩個字。';
+            else if (state.errorCount === 3) state.error = '靈光現前：目的地全名是「新旺集瓷」。';
+            else state.error = '因緣已至：目的地即是「新旺集瓷」，請輸入以續前緣。';
+            render();
+        }
+
+        function pressKey(key) {
+            if (state.dialValue.length < 10 && !isNaN(key)) {
+                state.dialValue += key;
+                state.error = '';
+                render();
+            }
+        }
+
+        function clearDial() {
+            state.dialValue = '';
+            state.error = '';
+            render();
+        }
+
+        function formatPhone(val) {
+            if (!val) return '— — — —';
+            let res = val;
+            if (val.length > 2) res = val.slice(0, 2) + '-' + val.slice(2);
+            if (val.length > 6) res = res.slice(0, 7) + '-' + res.slice(7);
+            return res;
+        }
+
+        function getKeySub(key) {
+            const map = {'2':'ABC','3':'DEF','4':'GHI','5':'JKL','6':'MNO','7':'PQRS','8':'TUV','9':'WXYZ'};
+            return map[key] || '';
+        }
+
+        function getHintContent() {
+            if (state.hintLevel === 0) return '<p class="italic text-stone-400 text-[10px] text-center py-2">尚無啟示，若解碼受阻可點擊尋求指引...</p>';
+            let hints = ['雙入(區碼) = 02', '八正(8) 六波(6)', '七覺支(7) 出現兩次', '聖賢二十七(27) 出現兩次'];
+            let txt = '<ul class="space-y-1">';
+            for(let i=0; i<state.hintLevel; i++) {
+                txt += `<li class="text-amber-900 border-b border-amber-100 pb-1">● ${hints[i]}</li>`;
+            }
+            return txt + '</ul>';
+        }
+
+        function nextHint() {
+            if (state.hintLevel < 4) {
+                state.hintLevel++;
+                render();
+            }
+        }
+
+        function revealAnswer() {
+            state.hintLevel = 4;
+            state.dialValue = '0286772727';
+            closeMercyModal();
+            render();
+        }
+
+        function checkL5() {
+            if (state.dialValue === '0286772727') {
+                updateStage('L5_LOCATION'); 
+            } else {
+                state.error = '❌ 此號碼查無此法，請參悟數字啟示。';
+                render();
+            }
+        }
+
+        function checkLocation() {
+            const val = document.getElementById('location-input').value.trim();
+            const correctAnswers = ['鶯歌陶瓷博物館', '陶瓷博物館', '陶博館'];
+            
+            if (correctAnswers.some(ans => val.includes(ans))) {
+                state.errorCount = 0; 
+                updateStage('MUSEUM_MISSION');
+            } else {
+                state.errorCount++;
+                if (state.errorCount === 1) state.error = '提示：那是一座以「清水模」著稱的宏偉建築。';
+                else if (state.errorCount === 2) state.error = '提示：就在老街附近，是鶯歌最重要的陶瓷文化地標。';
+                else state.error = '提示：博物館。';
+                render();
+            }
+        }
+
+        function checkMuseum() {
+            const val = document.getElementById('museum-input').value.trim();
+            const current = museumMissions[state.museumStep];
+            const isCorrect = current.answers.some(ans => val.includes(ans));
+
+            if (isCorrect) {
+                state.error = '';
+                if (state.museumStep < museumMissions.length - 1) {
+                    state.museumStep++;
+                    render();
+                } else {
+                    // 博物館 8 題答完後，隨機抽取 'TAO' (達悟族) 或 'AMI' (阿美族)
+                    state.chosenTribe = Math.random() < 0.5 ? 'TAO' : 'AMI';
+                    state.tribeAnswers = {}; // 初始化答案紀錄
+                    updateStage('TAO_AMI_MISSION');
+                }
+            } else {
+                state.error = '尚未識破真名，請再次觀察現場作品。';
+                render();
+            }
+        }
+
+        // 選擇族群題目的點擊事件
+        function selectTribeAnswer(questionId, optionValue) {
+            state.tribeAnswers[questionId] = optionValue;
+            state.error = '';
+            render();
+        }
+
+        // 驗證族群選擇題是否完全正確
+        function checkTribeMission() {
+            const tribeData = tribeMissions[state.chosenTribe];
+            let allCorrect = true;
+
+            for (let q of tribeData.questions) {
+                if (state.tribeAnswers[q.id] !== q.correct) {
+                    allCorrect = false;
+                    break;
+                }
+            }
+
+            if (allCorrect) {
+                updateStage('FINAL');
+            } else {
+                state.error = '❌ 部分答案有誤或尚未作答，請再次參詳影片內容。';
+                render();
+            }
+        }
+
+        function openMercyModal() { document.getElementById('mercy-modal').classList.remove('hidden'); }
+        function closeMercyModal() { document.getElementById('mercy-modal').classList.add('hidden'); }
+
+        // 初始渲染
+        render();
+    </script>
+</body>
+</html>
