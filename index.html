@@ -247,7 +247,6 @@
                     break;
 
                 case 'MUSEUM_MISSION':
-                    const currentMission = museumMissions[state.museumStep];
                     html = `
                         <div class="zen-card p-8 rounded-3xl shadow-2xl animate-fadeIn">
                             <div class="flex justify-between items-center mb-4">
@@ -258,10 +257,10 @@
                             </div>
                             <h2 class="text-lg font-bold mb-4 text-center">前往展區：<br/><span class="text-amber-800">「化泥成形」展區</span></h2>
                             <div class="rounded-xl mb-6 overflow-hidden border-2 border-stone-100 shadow-sm bg-stone-50 min-h-[180px] flex items-center justify-center">
-                                <img src="${currentMission.img}" alt="展品照片" class="max-w-full h-auto" onerror="handleImageError(this)">
+                                <img src="${museumMissions[state.museumStep].img}" alt="展品照片" class="max-w-full h-auto" onerror="handleImageError(this)">
                             </div>
-                            <p class="text-sm text-stone-500 mb-4 text-center leading-relaxed italic px-2">${currentMission.hint}</p>
-                            <input type="text" id="museum-input" placeholder="${currentMission.placeholder}" class="w-full p-4 border-2 border-stone-200 rounded-2xl text-center font-bold text-xl outline-none focus:border-amber-600 mb-2 transition-all">
+                            <p class="text-sm text-stone-500 mb-4 text-center leading-relaxed italic px-2">${museumMissions[state.museumStep].hint}</p>
+                            <input type="text" id="museum-input" placeholder="${museumMissions[state.museumStep].placeholder}" class="w-full p-4 border-2 border-stone-200 rounded-2xl text-center font-bold text-xl outline-none focus:border-amber-600 mb-2 transition-all">
                             <p id="error-msg" class="text-red-500 text-sm text-center mb-4 min-h-[1.25rem]">${state.error}</p>
                             <button onclick="checkMuseum()" class="w-full py-4 bg-stone-800 text-white rounded-2xl font-bold tracking-widest hover:bg-stone-900 shadow-md">提交驗證</button>
                         </div>
@@ -269,17 +268,16 @@
                     break;
 
                 case 'TAO_AMI_MISSION':
-                    const tribeData = tribeMissions[state.chosenTribe];
                     html = `
                         <div class="zen-card p-8 rounded-3xl shadow-2xl animate-fadeIn">
                             <span class="text-xs tracking-[0.4em] text-amber-800 font-bold uppercase block text-center mb-2">二樓常設展間通道</span>
                             <h2 class="text-2xl font-bold text-center text-stone-800 mb-2">🎬 原住民族陶藝影片特展</h2>
                             <p class="text-xs text-stone-500 text-center mb-6 italic">請觀看展間影片，回答下列問題完成尋寶</p>
                             <div class="w-full h-1 bg-amber-600/30 rounded-full mb-6"></div>
-                            <h3 class="text-lg font-bold text-amber-900 mb-4 flex items-center gap-2">📍 ${tribeData.title}</h3>
+                            <h3 class="text-lg font-bold text-amber-900 mb-4 flex items-center gap-2">📍 ${tribeMissions[state.chosenTribe].title}</h3>
                             
                             <div class="space-y-6">
-                                ${tribeData.questions.map((q) => `
+                                ${tribeMissions[state.chosenTribe].questions.map((q) => `
                                     <div class="bg-stone-50/60 p-4 rounded-2xl border border-stone-200/60">
                                         <p class="font-bold text-stone-800 mb-3 text-sm">${q.text}</p>
                                         <div class="grid grid-cols-1 gap-2">
@@ -319,7 +317,7 @@
                                 願你在生活中亦能如瓷，堅韌而溫潤。
                             </p>
                             <div class="border-2 border-amber-900/30 p-8 rounded-3xl bg-stone-800/50 mb-8">
-                                <p class="text-amber-500 font-bold tracking-widest text-xl">【功功德圓滿・四校聯合社遊鶯歌行】</p>
+                                <p class="text-amber-500 font-bold tracking-widest text-xl">【功德圓滿・四校聯合社遊鶯歌行】</p>
                                 <p class="text-stone-500 text-xs mt-4 italic">2026年5月 修持證明</p>
                             </div>
                             <button onclick="location.reload()" class="text-stone-500 hover:text-amber-400 text-sm flex items-center justify-center gap-2 mx-auto transition-colors">
@@ -411,12 +409,19 @@
             state.hintLevel = 4;
             state.dialValue = '0286772727';
             closeMercyModal();
+            state.error = '✨ 靈光已現，請點擊「撥通真相」以續前緣。';
             render();
         }
 
         function checkL5() {
             if (state.dialValue === '0286772727') {
-                updateStage('L5_LOCATION'); 
+                // 真正調用手機撥號功能
+                window.location.href = 'tel:0286772727';
+                
+                // 延遲 1 秒後默默切換到下一關，玩家講完電話掛斷回到瀏覽器時，就會直接進入 L5_LOCATION
+                setTimeout(() => {
+                    updateStage('L5_LOCATION'); 
+                }, 1000);
             } else {
                 state.error = '❌ 此號碼查無此法，請參悟數字啟示。';
                 render();
